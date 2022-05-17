@@ -1,3 +1,3 @@
 # Finances Quickbooks
 
-Finances Quickbooks is a WORK IN PROGRESS OCR-bill-detection.
+Finances Quickbooks is a **Work-In-Progress** OCR-bill-detection software.
