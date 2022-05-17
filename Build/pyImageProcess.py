@@ -1,7 +1,9 @@
-#from skimage.filters import threshold_local
 import numpy as np
 import cv2
 import imutils
+import math
+from scipy import ndimage
+import readImage as pyRI
 
 
 def order_points(pts):
@@ -48,12 +50,7 @@ def four_point_transform(image, pts):
     return warped
 
 
-def skew_correct(image):
-    image = cv2.imread(image, 1)
-    image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
-
-    # compute the ratio of the old height to the new height, clone and resize
-    ratio = image.shape[0] / 500.0
+def skew_correct(image, ratio):
     orig = image.copy()
     image = imutils.resize(image, height=500)
 
@@ -68,6 +65,7 @@ def skew_correct(image):
     cnts = imutils.grab_contours(cnts)
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
 
+    screenCnt = None
     # loop over the contours
     for c in cnts:
         # approximate the contour
@@ -78,6 +76,7 @@ def skew_correct(image):
         if len(approx) == 4:
             screenCnt = approx
             break
+    cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
 
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
     warped = cv2.resize(warped, (0, 0), fx=15, fy=15)
@@ -106,11 +105,48 @@ def process_Image(image):
     result = cv2.GaussianBlur(result, (3, 3), 0)
     return result
 
-# def generate_Border(img):
+
+def fix_rotation(img):
+    # https://stackoverflow.com/questions/46731947/detect-angle-and-rotate-an-image-in-python/46732132
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_edges = cv2.Canny(img_gray, 100, 100, apertureSize=3)
+    lines = cv2.HoughLinesP(img_edges, 1, math.pi / 180.0, 100, minLineLength=100, maxLineGap=5)
+
+    angles = []
+
+    for [[x1, y1, x2, y2]] in lines:
+        # cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
+        angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
+        angles.append(angle)
+
+    median_angle = np.median(angles)
+    print(f"Pre-Angle is {median_angle:.04f}")
+
+    # Adjust angle
+    if median_angle < -45:
+        median_angle = -(90 + median_angle)
+    elif median_angle == 0:
+        median_angle += 90
+    else:
+        median_angle = -median_angle
+
+    img_rotated = ndimage.rotate(img, median_angle)
+    print(f"Post-Angle is {median_angle:.04f}")
+    return img_rotated
 
 
-# def crop_Border(img):
+def prep_image(path):
+        image = cv2.imread(path, 1)
+        image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
 
+        rotated_Image = fix_rotation(image)
+        ratio = rotated_Image.shape[0] / 500.0
+        og_Image, skewed_Image = skew_correct(rotated_Image, ratio)
+        processed_Image = process_Image(skewed_Image)
 
-# def fix_rotation(img):
+        pyRI.checkConfidence(processed_Image)
 
+        cv2.imshow("Original", imutils.resize(og_Image, height=650))
+        cv2.imshow("Skewed", imutils.resize(skewed_Image, height=650))
+        cv2.imshow("Processed", imutils.resize(processed_Image, height=650))
+        cv2.waitKey(0)
