@@ -1,3 +1,3 @@
 # Finances Quickbooks
 
-Work In Progress
+Finances Quickbooks is a WORK IN PROGRESS OCR-bill-detection.
