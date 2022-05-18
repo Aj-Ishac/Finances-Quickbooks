@@ -136,17 +136,26 @@ def fix_rotation(img):
 
 
 def prep_image(path):
-        image = cv2.imread(path, 1)
-        image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
+    # packages all pyImageProcess funcs in one general use-case call
+    # edge cases will be passed through another tunnel
+    image = cv2.imread(path, 1)
+    image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
 
-        rotated_Image = fix_rotation(image)
-        ratio = rotated_Image.shape[0] / 500.0
-        og_Image, skewed_Image = skew_correct(rotated_Image, ratio)
-        processed_Image = process_Image(skewed_Image)
+    # detects angle of the image and aligns it upwards at 90degr
+    rotated_Image = fix_rotation(image)
+    
+    # collects base shape of the ROI and skews edge vertices to fill return img xy
+    # isolates ROI of surrounding background, edge case: run calc on contour area, discard all but largest
+    ratio = rotated_Image.shape[0] / 500.0
+    og_Image, skewed_Image = skew_correct(rotated_Image, ratio)
 
-        pyRI.checkConfidence(processed_Image)
+    # image processing loop to remove light/shadow effects, noise gates and folding artifacts
+    processed_Image = process_Image(skewed_Image)
 
-        cv2.imshow("Original", imutils.resize(og_Image, height=650))
-        cv2.imshow("Skewed", imutils.resize(skewed_Image, height=650))
-        cv2.imshow("Processed", imutils.resize(processed_Image, height=650))
-        cv2.waitKey(0)
+    # unit test of current OCR implementation
+    pyRI.checkConfidence(processed_Image)
+
+    cv2.imshow("Original", imutils.resize(og_Image, height=850))
+    cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
+    cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
+    cv2.waitKey(0)
