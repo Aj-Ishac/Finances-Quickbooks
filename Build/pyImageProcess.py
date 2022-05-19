@@ -3,9 +3,9 @@ import cv2
 import imutils
 import math
 from scipy import ndimage
-import readImage as pyRI
 
 import utility
+
 
 def order_points(pts):
     # assign rect vertex points in ordered format
@@ -143,13 +143,13 @@ def fix_rotation(img):
 def process_Image_method2(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-    #thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 41, 14)
-    ret, thresh1 = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 85, 14)
 
-    return thresh1
+    return thresh
+
 
 def master_image_prep(path):
-    startTime = utility.start_time()        # record start time
+    startTime = utility.start_time()
     # packages all pyImageProcess funcs in one general use-case call
     # edge cases will be passed through another tunnel
     image = cv2.imread(path, 1)
@@ -164,20 +164,17 @@ def master_image_prep(path):
     og_Image, skewed_Image = skew_correct(rotated_Image, ratio)
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
-    processed_Image = process_Image(skewed_Image)
-    # processed_Image = process_Image_method2(skewed_Image)
+    # processed_Image = process_Image(skewed_Image)
+    processed_Image = process_Image_method2(skewed_Image)
 
-    utility.end_time(startTime)         # record end time
-
-    # unit test of current OCR implementation
-    pyRI.checkConfidence(processed_Image)
-
+    utility.end_time(startTime)
     cv2.imshow("Original", imutils.resize(og_Image, height=850))
     cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
     cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
 
     # save image under folder_name and exits on 's' key, exits on any other key press
     utility.conditional_ExitSave('Processed', processed_Image)
+    return og_Image, processed_Image
 
 
 # tickets:

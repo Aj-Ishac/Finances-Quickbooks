@@ -62,16 +62,20 @@ def saveImage(filePath, imageName, fileName):
 
 
 def WHERE(back=0):
+    # returns func name where WHERE is run
+    # 1 as param to return parent func
     frame = sys._getframe(back + 1)
     return "%s/line%s -> %s()" % (os.path.basename(frame.f_code.co_filename),
                                   frame.f_lineno, frame.f_code.co_name)
 
 
 def start_time():
+    # mark start time
     return time.time()
 
 
 def end_time(start):
+    # mark end time and print computation time and where func resides
     end = time.time()
     print('------------------------------------')
     print(WHERE(1))
