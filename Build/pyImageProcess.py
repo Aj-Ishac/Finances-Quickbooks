@@ -5,6 +5,7 @@ import math
 from scipy import ndimage
 import readImage as pyRI
 
+import utility
 
 def order_points(pts):
     # assign rect vertex points in ordered format
@@ -21,7 +22,7 @@ def order_points(pts):
     return rect
 
 
-def four_point_transform(image, pts):
+def four_point_transform(img, pts):
     rect = order_points(pts)
     (tl, tr, br, bl) = rect
 
@@ -44,19 +45,19 @@ def four_point_transform(image, pts):
 
     # generate warped image from the perspective transform matrix
     M = cv2.getPerspectiveTransform(rect, dst)
-    warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+    warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
 
     # return the warped image
     return warped
 
 
-def skew_correct(image, ratio):
-    orig = image.copy()
-    image = imutils.resize(image, height=500)
+def skew_correct(img, ratio):
+    orig = img.copy()
+    img = imutils.resize(img, height=500)
 
     # grayscale, blur, and find edges
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #gray = cv2.GaussianBlur(gray, (7, 7), 0)
     edged = cv2.Canny(gray, 75, 200)
 
     # find the contours in the edged image, keeping only the
@@ -76,16 +77,17 @@ def skew_correct(image, ratio):
         if len(approx) == 4:
             screenCnt = approx
             break
-    cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
+    cv2.drawContours(img, [screenCnt], -1, (0, 255, 0), 2)
 
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
     warped = cv2.resize(warped, (0, 0), fx=15, fy=15)
     # return original and warped image
-    return image, warped
+    return img, warped
 
 
-def process_Image(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+def process_Image(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 
     # Morph open to remove noise
@@ -113,7 +115,6 @@ def fix_rotation(img):
     lines = cv2.HoughLinesP(img_edges, 1, math.pi / 180.0, 100, minLineLength=100, maxLineGap=5)
 
     angles = []
-
     for [[x1, y1, x2, y2]] in lines:
         # cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
         angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
@@ -135,7 +136,20 @@ def fix_rotation(img):
     return img_rotated
 
 
-def prep_image(path):
+# https://nanonets.com/blog/deep-learning-ocr/#preprocessing
+# http://people.tuebingen.mpg.de/burger/neural_denoising/
+# EAST (Efficient accurate scene text detector)
+# https://nanonets.com/blog/receipt-ocr/
+def process_Image_method2(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
+    #thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 41, 14)
+    ret, thresh1 = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    return thresh1
+
+def master_image_prep(path):
+    startTime = utility.start_time()        # record start time
     # packages all pyImageProcess funcs in one general use-case call
     # edge cases will be passed through another tunnel
     image = cv2.imread(path, 1)
@@ -143,14 +157,17 @@ def prep_image(path):
 
     # detects angle of the image and aligns it upwards at 90degr
     rotated_Image = fix_rotation(image)
-    
-    # collects base shape of the ROI and skews edge vertices to fill return img xy
+
+    # collects base shape of the ROI and skews edge vertices to fill return img xy axi
     # isolates ROI of surrounding background, edge case: run calc on contour area, discard all but largest
     ratio = rotated_Image.shape[0] / 500.0
     og_Image, skewed_Image = skew_correct(rotated_Image, ratio)
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
     processed_Image = process_Image(skewed_Image)
+    # processed_Image = process_Image_method2(skewed_Image)
+
+    utility.end_time(startTime)         # record end time
 
     # unit test of current OCR implementation
     pyRI.checkConfidence(processed_Image)
@@ -158,4 +175,14 @@ def prep_image(path):
     cv2.imshow("Original", imutils.resize(og_Image, height=850))
     cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
     cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
-    cv2.waitKey(0)
+
+    # save image under folder_name and exits on 's' key, exits on any other key press
+    utility.conditional_ExitSave('Processed', processed_Image)
+
+
+# tickets:
+# 1. skew_correct has the tendency of picking incorrect ROI to process when lighting is insufficient
+#    fix: run calc on all image contours and define ROI by largest contour area
+# 2. fix_rotation() leans rotation intent towards 90deg upward state
+#    if image is received upside down, end result will still be upside down with rotation fix
+#    fix: may need to run a pass on detecting angle of text and invert y-scale if flip detected

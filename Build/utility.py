@@ -1,7 +1,8 @@
 import os
 import cv2
 import csv
-
+import sys
+import time
 
 def export_ConfReport(list, averageConf):
     indexNum = 0
@@ -21,8 +22,30 @@ def export_ConfReport(list, averageConf):
         write.writerows(list)
 
     print('------------------------------------')
-    print(f'CSV Export: confReport_%s.csv' % indexNum)
+    print('CSV Export: confReport_%s.csv' % indexNum)
     print(f'Average Confidence: {averageConf}%\n')
+
+
+def conditional_ExitSave(image_name, image_array, folder_name='Local-Saves'):
+    file_name = f'{image_name}'
+    file_Path = f'..\\{folder_name}\\'
+    postfix = 'jpg'
+
+    k = cv2.waitKey(0)
+    if k == ord('s'):       # if 's' key was pressed then save and exit
+        indexNum = 0
+        if not os.path.isdir(file_Path):
+            os.makedirs(file_Path)
+        while(os.path.exists(f'{file_Path}{file_name}_%s.{postfix}' % indexNum)):
+            indexNum += 1
+
+        edited_name = (f'{file_Path}{file_name}_%s.{postfix}' % indexNum)
+
+        cv2.imwrite(f'{file_Path}{edited_name}', image_array)
+        print(f'Mannual Export: {file_Path}{file_name}')
+        cv2.destroyAllWindows()
+    else:
+        cv2.destroyAllWindows()
 
 
 def saveImage(filePath, imageName, fileName):
@@ -36,3 +59,21 @@ def saveImage(filePath, imageName, fileName):
         indexNum += 1
     edited_name = (f'{prefix_name}_Edit%s.{postfix_name}' % indexNum)
     cv2.imwrite(f'{filePath}{edited_name}', fileName)
+
+
+def WHERE(back=0):
+    frame = sys._getframe(back + 1)
+    return "%s/line%s -> %s()" % (os.path.basename(frame.f_code.co_filename),
+                                  frame.f_lineno, frame.f_code.co_name)
+
+
+def start_time():
+    return time.time()
+
+
+def end_time(start):
+    end = time.time()
+    print('------------------------------------')
+    print(WHERE(1))
+    print(f'Computation Time: {round((end - start), 2)}s\
+          \n------------------------------------')

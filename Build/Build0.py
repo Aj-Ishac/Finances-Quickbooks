@@ -9,12 +9,11 @@ if __name__ == "__main__":
     image_name = '20220421_001520.jpg'     # skewed to the left = 5.9315 degrees
     # image_name = '20220417_151151.jpg'     # upwards, heavy background - Fails, look to light preprocess before looking for contours
 
-    image_directory = 'E:\\Personal Projects\\ReceiptScanner\\Images-Raw\\'
+    image_directory = '..\\Images-Raw\\'
     image_complete_Path = image_directory + image_name
 
-    pyIP.prep_image(image_complete_Path)
-
-    # config.saveImage('E:\\Personal Projects\\ReceiptScanner\\Images-Converted\\', image_name, refinedImage)
+    pyIP.master_image_prep(image_complete_Path)
+    # config.saveImage('..\\Images-Converted\\', image_name, refinedImage)
 
 # to-do:
 # 1. image_process
@@ -23,10 +22,3 @@ if __name__ == "__main__":
 #    confidence needs to be >95%, can also compare OCR totalPrice to mannual sum of individual product prices as additional success check
 # 4. ML model to predict product matching under respective categories
 # 5. set up mySQL DB
-
-# tickets:
-# 1. skew_correct has the tendency of picking incorrect ROI to process when lighting is insufficient
-#    fix: run calc on all image contours and define ROI by largest contour area
-# 2. fix_rotation() leans rotation intent towards 90deg upward state
-#    if image is received upside down, end result will still be upside down with rotation fix
-#    fix: may need to run a pass on detecting angle of text and invert y-scale if flip detected
