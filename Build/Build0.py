@@ -18,10 +18,10 @@ if __name__ == "__main__":
 
     # complete OCR package
     date, products = pyRI.master_image_read(processed_image)
-
     # config.saveImage('..\\Images-Converted\\', image_name, refinedImage)
 
 # to-do:
+# 1. fix bounding boxes and test tess.read pass after
 # 2. NN text classification model
 # 3. parse [merchant, date, products, prices] and regex data
 #    confidence needs to be >95%, can also compare OCR totalPrice to mannual sum of individual product prices as additional success check

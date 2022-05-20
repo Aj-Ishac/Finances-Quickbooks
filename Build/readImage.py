@@ -1,7 +1,26 @@
-import utility
+from numpy import source
 import pytesseract as tess
-import re
+from pytesseract import Output
 import datetime as dt
+import imutils
+import cv2
+import re
+import sys
+
+import utility
+
+
+def generate_boundingBoxes(img):
+    d = tess.image_to_data(img, output_type=Output.DICT)
+    n_boxes = len(d['level'])
+    for i in range(n_boxes):
+        (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    tess.image_to_data(img)
+    cv2.imshow("Borders", imutils.resize(img, height=850))
+    cv2.waitKey(0)
+
 
 def checkConfidence(imageTemplate):
     text = tess.image_to_data(imageTemplate, output_type='data.frame')
@@ -15,16 +34,16 @@ def checkConfidence(imageTemplate):
             line_conf.append((lines[i], round(confs[i], 3)))
 
     if line_conf:
-        average_Conf = format(sum(confs) / len(confs), ".2f")
-        line_conf.append(["Average", average_Conf + "%"])
+        line_conf.append(["Average", round(sum(confs) / len(confs), 2)])
 
     print(*line_conf, sep='\n')
-    utility.export_ConfReport(line_conf, average_Conf)
+    # utility.export_ConfReport(line_conf, average_Conf)
 
 
 def readImage(img):
     startTime = utility.start_time()
     custom_config = r'--oem 3 --psm 6'
+    #custom_config = ('-l eng --oem 1 --psm 3')
     source_text = tess.image_to_string(img, config=custom_config).lower()
 
     utility.end_time(startTime)
@@ -39,8 +58,8 @@ def readImage(img):
 # balance due o.0a00\nthanks for coming in!\nguestsupport@meddys .com\nwvly,meddys .com\n'
 
 # [('Garlicky Chicxen', 14.49), ('Kids Bow!', 1.99), ('Sd Roast Veg', 3.99),
-#  ('Take Out Cids Bow!)', 5.99), ('Heaped Hutmus', 7.49), ('Subtota]', 33.95),
-#  ('Tax', 2.55), ('Total', 36.5), ('Tip :', 3.39), ('Total Ee', 33.89)]
+#  ('Take Out Cids Bow!)', 5.99), ('Heaped Hutmus', 7.49),
+# ('Subtota]', 33.95), ('Tax', 2.55), ('Total', 36.5), ('Tip :', 3.39), ('Total Ee', 33.89)]
 
 # get rid of:
 # ('Subtota]', 33.95),
@@ -58,7 +77,29 @@ def extract_items(source_text):
     products, price_regex = [], r"(\d+\.\d{1,2})"
     for item in product_matches:
         tokens = re.split(price_regex, item)
-        products.append((tokens[0].rstrip().replace('\n', '').title(), float(tokens[1])))
+        products.append((tokens[0].rstrip().replace('\n', ''), float(tokens[1])))
+
+    total, tip, tax = 0, 0, 0
+    # remove non-item listing and seperate tax, tip, and max(total) into their own vars
+    for item in reversed(products):
+        if "total" in item[0]:
+            total = max(total, item[1])
+            products.remove(item)
+        elif "tip" in item[0]:
+            tip = item[1]
+            products.remove(item)
+        elif "tax" in item[0]:
+            tax = item[1]
+            products.remove(item)
+
+    if tax > 0:
+        products.append(("tax", tax))
+    if total > 0:
+        products.append(("total", total))
+    if tip > 0:
+        products.append(("tip", tip))
+
+    print(products)
     return products
 
 
@@ -89,7 +130,6 @@ def master_image_read(img):
     print("Date: ", date, end='\n')
 
     return date, products
-
 
 # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
 # https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb

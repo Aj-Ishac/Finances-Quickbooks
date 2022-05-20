@@ -100,7 +100,7 @@ def generate_borders(img):
 
 def process_Image(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    # thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 
     # Morph open to remove noise
@@ -157,9 +157,8 @@ def process_Image_method2(img):
     # Morph open to remove noise
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
     opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-
+    #result = cv2.GaussianBlur(opening, (3, 3), 0)
     cv2.imshow("Processed", imutils.resize(thresh, height=850))
-    cv2.imshow("Bordered", imutils.resize(opening, height=850))
     cv2.waitKey(0)
     return opening
 
@@ -201,13 +200,9 @@ def master_image_prep(path):
 # 2. fix_rotation() leans rotation intent towards 90deg upward state
 #    if image is received upside down, end result will still be upside down with rotation fix
 #    fix: may need to run a pass on detecting angle of text and invert y-scale if flip detected
-# 3. image processing improvements
-#    morph and dillate
+# 3. image processing improvements - morph and dillate
 #    https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
-
-
-
-
+#    https://stackoverflow.com/questions/9480013/image-processing-to-improve-tesseract-ocr-accuracy
 
 # https://nanonets.com/blog/deep-learning-ocr/#preprocessing
 # http://people.tuebingen.mpg.de/burger/neural_denoising/
