@@ -57,7 +57,7 @@ def skew_correct(img, ratio):
 
     # grayscale, blur, and find edges
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #gray = cv2.GaussianBlur(gray, (7, 7), 0)
+    # gray = cv2.GaussianBlur(gray, (7, 7), 0)
     edged = cv2.Canny(gray, 75, 200)
 
     # find the contours in the edged image, keeping only the
@@ -82,7 +82,20 @@ def skew_correct(img, ratio):
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
     warped = cv2.resize(warped, (0, 0), fx=15, fy=15)
     # return original and warped image
-    return img, warped
+    return warped
+
+
+def generate_borders(img):
+    if img is None:
+        return -1
+
+    top = int(0.01 * img.shape[0])
+    bottom = top
+    left = int(0.02 * img.shape[1])
+    right = left
+
+    bordered_image = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, None, 0)
+    return bordered_image
 
 
 def process_Image(img):
@@ -121,7 +134,7 @@ def fix_rotation(img):
         angles.append(angle)
 
     median_angle = np.median(angles)
-    print(f"Pre-Angle is {median_angle:.04f}")
+    print(f"Detected Angle: {median_angle:.04f}")
 
     # Adjust angle
     if median_angle < -45:
@@ -132,20 +145,23 @@ def fix_rotation(img):
         median_angle = -median_angle
 
     img_rotated = ndimage.rotate(img, median_angle)
-    print(f"Post-Angle is {median_angle:.04f}")
+    print(f"Adjusted Angle: {median_angle:.04f}")
     return img_rotated
 
 
-# https://nanonets.com/blog/deep-learning-ocr/#preprocessing
-# http://people.tuebingen.mpg.de/burger/neural_denoising/
-# EAST (Efficient accurate scene text detector)
-# https://nanonets.com/blog/receipt-ocr/
 def process_Image_method2(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (7, 7), 0)
     thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 85, 14)
 
-    return thresh
+    # Morph open to remove noise
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
+
+    cv2.imshow("Processed", imutils.resize(thresh, height=850))
+    cv2.imshow("Bordered", imutils.resize(opening, height=850))
+    cv2.waitKey(0)
+    return opening
 
 
 def master_image_prep(path):
@@ -161,20 +177,22 @@ def master_image_prep(path):
     # collects base shape of the ROI and skews edge vertices to fill return img xy axi
     # isolates ROI of surrounding background, edge case: run calc on contour area, discard all but largest
     ratio = rotated_Image.shape[0] / 500.0
-    og_Image, skewed_Image = skew_correct(rotated_Image, ratio)
+    skewed_Image = skew_correct(rotated_Image, ratio)
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
     # processed_Image = process_Image(skewed_Image)
     processed_Image = process_Image_method2(skewed_Image)
+    bordered_image = generate_borders(processed_Image)
 
     utility.end_time(startTime)
-    cv2.imshow("Original", imutils.resize(og_Image, height=850))
+    cv2.imshow("Original", imutils.resize(image, height=850))
     cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
     cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
+    cv2.imshow("Bordered", imutils.resize(bordered_image, height=850))
 
-    # save image under folder_name and exits on 's' key, exits on any other key press
-    utility.conditional_ExitSave('Processed', processed_Image)
-    return og_Image, processed_Image
+    # 's' press to save to local-saves, exits on any other key press
+    utility.conditional_ExitSave('Bordered', bordered_image)
+    return skewed_Image, processed_Image, bordered_image
 
 
 # tickets:
@@ -183,3 +201,15 @@ def master_image_prep(path):
 # 2. fix_rotation() leans rotation intent towards 90deg upward state
 #    if image is received upside down, end result will still be upside down with rotation fix
 #    fix: may need to run a pass on detecting angle of text and invert y-scale if flip detected
+# 3. image processing improvements
+#    morph and dillate
+#    https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
+
+
+
+
+
+# https://nanonets.com/blog/deep-learning-ocr/#preprocessing
+# http://people.tuebingen.mpg.de/burger/neural_denoising/
+# EAST (Efficient accurate scene text detector)
+# https://nanonets.com/blog/receipt-ocr/

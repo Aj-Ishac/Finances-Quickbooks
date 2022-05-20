@@ -14,15 +14,11 @@ if __name__ == "__main__":
     image_complete_Path = image_directory + image_name
 
     # complete processing package via pyImageProcess
-    original_image, processed_image = pyIP.master_image_prep(image_complete_Path)
+    original_image, processed_image, bordered_image = pyIP.master_image_prep(image_complete_Path)
 
-    # unit test of current OCR implementation
-    # pyRI.checkConfidence(processed_image)
+    # complete OCR package
+    date, products = pyRI.master_image_read(processed_image)
 
-    source_text = pyRI.readImage(processed_image)
-    print(source_text)
-
-    pyRI.region_boundingBox(processed_image)
     # config.saveImage('..\\Images-Converted\\', image_name, refinedImage)
 
 # to-do:
