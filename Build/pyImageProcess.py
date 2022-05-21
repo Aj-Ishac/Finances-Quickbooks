@@ -3,9 +3,10 @@ import cv2
 import imutils
 import math
 from scipy import ndimage
+import reader_model
 
 import utility
-
+import readImage as
 
 def order_points(pts):
     # assign rect vertex points in ordered format
@@ -98,6 +99,15 @@ def generate_borders(img):
     return bordered_image
 
 
+def remove_borders(img):
+    contours, heiarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cntSorted = sorted(contours, key=lambda x: cv2.contourArea(x))
+    cnt = cntSorted[-1]
+
+    x, y, w, h = cv2.boundingRect(cnt)
+    crop = img[y:y+h, x:x+w]
+    return crop
+
 def process_Image(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
@@ -157,7 +167,7 @@ def process_Image_method2(img):
     # Morph open to remove noise
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
     opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-    #result = cv2.GaussianBlur(opening, (3, 3), 0)
+    
     cv2.imshow("Processed", imutils.resize(thresh, height=850))
     cv2.waitKey(0)
     return opening
@@ -183,10 +193,14 @@ def master_image_prep(path):
     processed_Image = process_Image_method2(skewed_Image)
     bordered_image = generate_borders(processed_Image)
 
+    processed_image2 = reader_model.processMethod3(skewed_Image)
+    pyRI.checkConfidence(processed_image2)
+
     utility.end_time(startTime)
     cv2.imshow("Original", imutils.resize(image, height=850))
     cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
     cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
+    cv2.imshow("Processed2", imutils.resize(processed_image2, height=850))
     cv2.imshow("Bordered", imutils.resize(bordered_image, height=850))
 
     # 's' press to save to local-saves, exits on any other key press

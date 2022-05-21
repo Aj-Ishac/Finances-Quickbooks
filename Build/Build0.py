@@ -15,9 +15,9 @@ if __name__ == "__main__":
 
     # complete processing package via pyImageProcess
     original_image, processed_image, bordered_image = pyIP.master_image_prep(image_complete_Path)
-
     # complete OCR package
     date, products = pyRI.master_image_read(processed_image)
+
     # config.saveImage('..\\Images-Converted\\', image_name, refinedImage)
 
 # to-do:
