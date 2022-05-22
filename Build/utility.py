@@ -2,27 +2,26 @@ import os
 import cv2
 import csv
 import sys
+import traceback
 import time
 
-def export_ConfReport(list, averageConf):
-    indexNum = 0
-    path = 'E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\'
-    averageConf = averageConf.rpartition('.')[0]
+from cv2 import log
 
-    # increment fileindex if filename exists, create directory if needed
+def export_ConfReport(img_name, list, averageConf):
+    path = 'E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\'
+    averageConf = int(averageConf)
+    img_name = img_name[:-3]
+
     if not os.path.isdir(path):
         os.makedirs(path)
 
-    while os.path.exists(f'{path}confReport_%s.csv' % indexNum):
-        indexNum += 1
-
-    file = open((f"{path}confReport_%s.csv" % indexNum), 'w', newline='')
+    file = open((f"{path}{img_name}_{averageConf}.csv"), 'w', newline='')
     with file:
         write = csv.writer(file)
         write.writerows(list)
 
     print('------------------------------------')
-    print('CSV Export: confReport_%s.csv' % indexNum)
+    print('CSV Export: {img_name}_{averageConf}.csv')
     print(f'Average Confidence: {averageConf}%\n')
 
 
@@ -81,3 +80,18 @@ def end_time(start):
     print(WHERE(1))
     print(f'Computation Time: {round((end - start), 2)}s\
           \n------------------------------------')
+
+
+def logger():
+    traceback.print_exc(file="..\\Logs\\myapp.log")
+    pass
+
+
+def folder_parse(folder_name):
+    file_queue = []
+    for file in os.listdir(f"..\\{folder_name}"):
+        if file.endswith(".jpg"):
+            file_name = (os.path.join("..\\Images-Raw", file))[14:]
+            file_queue.append(file_name)
+
+    return file_queue

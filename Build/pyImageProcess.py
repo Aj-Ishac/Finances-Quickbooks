@@ -3,10 +3,8 @@ import cv2
 import imutils
 import math
 from scipy import ndimage
-import reader_model
 
 import utility
-import readImage as
 
 def order_points(pts):
     # assign rect vertex points in ordered format
@@ -90,45 +88,13 @@ def generate_borders(img):
     if img is None:
         return -1
 
-    top = int(0.01 * img.shape[0])
+    top = int(0.005 * img.shape[0])
     bottom = top
-    left = int(0.02 * img.shape[1])
+    left = int(0.01 * img.shape[1])
     right = left
 
     bordered_image = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, None, 0)
     return bordered_image
-
-
-def remove_borders(img):
-    contours, heiarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cntSorted = sorted(contours, key=lambda x: cv2.contourArea(x))
-    cnt = cntSorted[-1]
-
-    x, y, w, h = cv2.boundingRect(cnt)
-    crop = img[y:y+h, x:x+w]
-    return crop
-
-def process_Image(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-
-    # Morph open to remove noise
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-
-    # Find contours and remove small noise
-    cnts = cv2.findContours(opening, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    for c in cnts:
-        area = cv2.contourArea(c)
-        if area < 50:
-            cv2.drawContours(opening, [c], -1, 0, -1)
-
-    # Invert and apply slight Gaussian blur
-    result = 255 - opening
-    result = cv2.GaussianBlur(result, (3, 3), 0)
-    return result
 
 
 def fix_rotation(img):
@@ -155,26 +121,31 @@ def fix_rotation(img):
         median_angle = -median_angle
 
     img_rotated = ndimage.rotate(img, median_angle)
-    print(f"Adjusted Angle: {median_angle:.04f}")
     return img_rotated
 
 
-def process_Image_method2(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 85, 14)
+def processMethod3(img):
+    gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 85, 14)
+    # 85, 14
+    # remove noise
+    kernel = np.ones((1, 1), np.uint8)
+    image = cv2.dilate(thresh, kernel, iterations=1)
+    kernel = np.ones((1, 1), np.uint8)
+    image = cv2.erode(image, kernel, iterations=1)
+    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+    no_noise = cv2.medianBlur(image, 3)
 
-    # Morph open to remove noise
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-    
-    cv2.imshow("Processed", imutils.resize(thresh, height=850))
-    cv2.waitKey(0)
-    return opening
+    # thicken font
+    image = cv2.bitwise_not(no_noise)
+    kernel = np.ones((2, 2), np.uint8)
+    image = cv2.dilate(image, kernel, iterations=1)
+    thick_font = cv2.bitwise_not(image)
+
+    return thick_font
 
 
-def master_image_prep(path):
-    startTime = utility.start_time()
+def master_image_processor(path):
     # packages all pyImageProcess funcs in one general use-case call
     # edge cases will be passed through another tunnel
     image = cv2.imread(path, 1)
@@ -190,21 +161,18 @@ def master_image_prep(path):
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
     # processed_Image = process_Image(skewed_Image)
-    processed_Image = process_Image_method2(skewed_Image)
+    processed_Image = processMethod3(skewed_Image)
+
+    # boredered image not to be used for reading
     bordered_image = generate_borders(processed_Image)
 
-    processed_image2 = reader_model.processMethod3(skewed_Image)
-    pyRI.checkConfidence(processed_image2)
-
-    utility.end_time(startTime)
-    cv2.imshow("Original", imutils.resize(image, height=850))
-    cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
-    cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
-    cv2.imshow("Processed2", imutils.resize(processed_image2, height=850))
-    cv2.imshow("Bordered", imutils.resize(bordered_image, height=850))
+    # cv2.imshow("Original", imutils.resize(image, height=850))
+    # cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
+    # cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
+    # cv2.imshow("Bordered", imutils.resize(bordered_image, height=850))
 
     # 's' press to save to local-saves, exits on any other key press
-    utility.conditional_ExitSave('Bordered', bordered_image)
+    # utility.conditional_ExitSave('Bordered', bordered_image)
     return skewed_Image, processed_Image, bordered_image
 
 
@@ -218,6 +186,7 @@ def master_image_prep(path):
 #    https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
 #    https://stackoverflow.com/questions/9480013/image-processing-to-improve-tesseract-ocr-accuracy
 
+# research:
 # https://nanonets.com/blog/deep-learning-ocr/#preprocessing
 # http://people.tuebingen.mpg.de/burger/neural_denoising/
 # EAST (Efficient accurate scene text detector)
