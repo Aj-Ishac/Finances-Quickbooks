@@ -109,6 +109,6 @@ def convert_dpi(image_complete_path):
 
 
 def df_to_cvs(img_name, averageConf, df):
-    filepath = Path(f'../Build/Data/DF{round(averageConf, 0)}_{img_name}.csv')
+    filepath = Path(f'../Confidence Reports/{img_name}_df{round(averageConf, 0)}.csv')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(filepath)
