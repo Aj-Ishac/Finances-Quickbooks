@@ -21,7 +21,8 @@ def checkConfidence(img_name, imageTemplate):
         line_conf.append(["Average", avg_conf])
 
     print(*line_conf, sep='\n')
-    utility.export_ConfReport(img_name, line_conf, avg_conf)
+    averageConf = utility.export_ConfReport(img_name, line_conf, avg_conf)
+    return averageConf
 
 
 def readImage(img):
@@ -60,7 +61,7 @@ def extract_products(source_text):
     products, price_regex = [], r"(\d+\.\d{1,2})"
     for item in product_matches:
         tokens = re.split(price_regex, item)
-        products.append((tokens[0].rstrip().replace('\n', ''), float(tokens[1])))
+        products.append((tokens[0].strip().replace('\n', ''), float(tokens[1])))
 
     total, tip, tax = 0, 0, 0
     # remove non-item listing and seperate tax, tip, and max(total) into their own vars
@@ -118,7 +119,7 @@ def extract_vendor(source_text):
 
 def master_image_read(img_name, img):
     # unit test of current OCR implementation
-    checkConfidence(img_name, img)
+    averageConf = checkConfidence(img_name, img)
     source_text = readImage(img)
 
     products, tax, tip, total = extract_products(source_text)            # list(Item, Price)
@@ -132,7 +133,7 @@ def master_image_read(img_name, img):
     print(df)
     print("Tip: ", tip, " Tax: ", tax, " Total: ", total)
 
-    return date, products, vendor, vendor_url
+    return date, products, vendor, vendor_url, averageConf
 
 
 # https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb

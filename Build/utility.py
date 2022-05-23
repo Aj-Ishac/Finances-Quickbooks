@@ -15,14 +15,15 @@ def export_ConfReport(img_name, list, averageConf):
     if not os.path.isdir(path):
         os.makedirs(path)
 
-    file = open((f"{path}{img_name}_{averageConf}.csv"), 'w', newline='')
+    file = open((f"{path}{img_name}_{averageConf}.csv"), 'w', encoding="utf-8", newline='')
     with file:
         write = csv.writer(file)
         write.writerows(list)
 
     print('------------------------------------')
-    print('CSV Export: {img_name}_{averageConf}.csv')
+    print(f'CSV Export: {img_name}_{averageConf}.csv')
     print(f'Average Confidence: {averageConf}%\n')
+    return averageConf
 
 
 def conditional_ExitSave(image_name, image_array, folder_name='Local-Saves'):
@@ -95,3 +96,12 @@ def folder_parse(folder_name):
             file_queue.append(file_name)
 
     return file_queue
+
+def writer(image_name, file_name, averageConf):
+
+    index = 0
+    f = open(file_name, "a")
+    f.write(f"{str(index)} - {image_name} PASS {str(averageConf)}%\n")
+    print(f"{str(index)} - {image_name} PASS {str(averageConf)}%")
+    f.close()
+    index += 1

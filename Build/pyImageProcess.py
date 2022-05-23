@@ -77,7 +77,6 @@ def skew_correct(img, ratio):
             screenCnt = approx
             break
     cv2.drawContours(img, [screenCnt], -1, (0, 255, 0), 2)
-
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
     warped = cv2.resize(warped, (0, 0), fx=15, fy=15)
     # return original and warped image
@@ -166,13 +165,12 @@ def master_image_processor(path):
     # boredered image not to be used for reading
     bordered_image = generate_borders(processed_Image)
 
-    # cv2.imshow("Original", imutils.resize(image, height=850))
-    # cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
-    # cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
-    # cv2.imshow("Bordered", imutils.resize(bordered_image, height=850))
+    cv2.imshow("Original", imutils.resize(image, height=850))
+    cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
+    cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
 
     # 's' press to save to local-saves, exits on any other key press
-    # utility.conditional_ExitSave('Bordered', bordered_image)
+    utility.conditional_ExitSave('Bordered', bordered_image)
     return skewed_Image, processed_Image, bordered_image
 
 
