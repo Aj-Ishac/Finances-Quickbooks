@@ -1,12 +1,11 @@
-from operator import index
 import os
 import cv2
 import csv
 import sys
-import traceback
 import time
-from pathlib import Path  
-import pandas 
+from pathlib import Path
+from PIL import Image
+
 
 def export_ConfReport(img_name, list, averageConf):
     path = 'E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\'
@@ -84,11 +83,6 @@ def end_time(start):
           \n------------------------------------')
 
 
-def logger():
-    traceback.print_exc(file="..\\Logs\\myapp.log")
-    pass
-
-
 def folder_parse(folder_name):
     file_queue = []
     for file in os.listdir(f"..\\{folder_name}"):
@@ -109,11 +103,12 @@ def writer(image_name, file_name, averageConf):
     index += 1
 
 
-def df_to_cvs(img_name, df):
-    indexNum = 0
-    while(os.path.exists(f'../Build/Data/{img_name}_%s.csv' % indexNum)):
-        indexNum += 1
+def convert_dpi(image_complete_path):
+    im = Image.open(image_complete_path)
+    im.save(image_complete_path, dpi=(300, 300))
 
-    filepath = Path(f'../Build/Data/{img_name}_%s.csv' % indexNum)
+
+def df_to_cvs(img_name, averageConf, df):
+    filepath = Path(f'../Build/Data/DF{round(averageConf, 0)}_{img_name}.csv')
     filepath.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(filepath)

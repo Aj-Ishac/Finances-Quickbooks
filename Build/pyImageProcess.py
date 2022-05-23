@@ -66,20 +66,18 @@ def skew_correct(img, ratio):
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
 
     screenCnt = None
-    # loop over the contours
     for c in cnts:
         # approximate the contour
         peri = cv2.arcLength(c, True)
         approx = cv2.approxPolyDP(c, 0.02 * peri, True)
         # if our approximated contour has four points, then we
-        # can assume that we have found our screen
+        # can assume that we have found our ROI
         if len(approx) == 4:
             screenCnt = approx
             break
     cv2.drawContours(img, [screenCnt], -1, (0, 255, 0), 2)
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
-    warped = cv2.resize(warped, (0, 0), fx=15, fy=15)
-    # return original and warped image
+    warped = cv2.resize(warped, (0, 0), fx=3.35, fy=3.35)
     return warped
 
 
@@ -130,7 +128,6 @@ def processMethod3(img):
     # remove noise
     kernel = np.ones((1, 1), np.uint8)
     image = cv2.dilate(thresh, kernel, iterations=1)
-    kernel = np.ones((1, 1), np.uint8)
     image = cv2.erode(image, kernel, iterations=1)
     image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
     no_noise = cv2.medianBlur(image, 3)
@@ -144,7 +141,7 @@ def processMethod3(img):
     return thick_font
 
 
-def master_image_processor(path):
+def master_image_processor(image_name, path):
     # packages all pyImageProcess funcs in one general use-case call
     # edge cases will be passed through another tunnel
     image = cv2.imread(path, 1)
@@ -156,14 +153,20 @@ def master_image_processor(path):
     # collects base shape of the ROI and skews edge vertices to fill return img xy axi
     # isolates ROI of surrounding background, edge case: run calc on contour area, discard all but largest
     ratio = rotated_Image.shape[0] / 500.0
-    skewed_Image = skew_correct(rotated_Image, ratio)
+    skewed_image = skew_correct(rotated_Image, ratio)
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
     # processed_Image = process_Image(skewed_Image)
-    processed_Image = processMethod3(skewed_Image)
+    processed_image = processMethod3(skewed_image)
 
     # boredered image not to be used for reading
-    bordered_image = generate_borders(processed_Image)
+    bordered_image = generate_borders(processed_image)
+
+    cv2.imwrite(f"..\\Images-Converted\\{image_name}_Original.jpg", skewed_image)
+    cv2.imwrite(f"..\\Images-Converted\\{image_name}_Processed.jpg", processed_image)
+    cv2.imwrite(f"..\\Images-Converted\\{image_name}_Border.jpg", bordered_image)
+    file_to_dpi = f"..\\Images-Converted\\{image_name}_Processed.jpg"
+    utility.convert_dpi(file_to_dpi)
 
     # cv2.imshow("Original", imutils.resize(image, height=850))
     # cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
@@ -171,7 +174,7 @@ def master_image_processor(path):
 
     # 's' press to save to local-saves, exits on any other key press
     # utility.conditional_ExitSave('Bordered', bordered_image)
-    return skewed_Image, processed_Image, bordered_image
+    return skewed_image, processed_image, bordered_image
 
 
 # tickets:

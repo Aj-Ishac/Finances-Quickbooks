@@ -157,13 +157,13 @@ def master_image_read(img_name, img):
 
     dict_dataScan = {"products": products, "date": date, "vendor": vendor, "url": vendor_url}
     df = pd.DataFrame(data=dict_dataScan)
-    utility.df_to_cvs(img_name, df)
+    utility.df_to_cvs(img_name, averageConf, df)
 
     # print(source_text.strip(), end="\n")
     print(df)
     print("Tip: ", tip, " Tax: ", tax, " Total: ", total)
 
-    return date, products,  vendor, vendor_url, averageConf
+    return date, products, vendor, vendor_url, averageConf
 
 # https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb
 # https://regex101.com/r/zG0fI5/1
@@ -183,3 +183,5 @@ def master_image_read(img_name, img):
 # https://arxiv.org/pdf/1704.03155.pdf
 # https://jaafarbenabderrazak-info.medium.com/ocr-with-tesseract-opencv-and-python-d2c4ec097866
 # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
+
+#

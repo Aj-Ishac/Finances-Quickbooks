@@ -8,44 +8,41 @@ import readImage as pyRI
 
 if __name__ == "__main__":
     tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
     # file_queue = utility.folder_parse("Images-Raw")
     # file_queue = sorted(file_queue)
     # file_queue = ["20220420_213104.jpg", "20220421_001513.jpg", "20220425_200954.jpg", "20220428_031510.jpg"]
-    file_queue = ["20220428_031510.jpg", "20220420_213104.jpg", "20220405_232412.jpg", "20220421_001520.jpg"]
+    file_queue = ["20220428_031510.jpg"]    # , "20220420_213104.jpg", "20220405_232412.jpg", "20220421_001520.jpg"]
     for image_name in file_queue:
         total_time = 0
         image_directory = '..\\Images-Raw\\'
-        image_complete_Path = image_directory + image_name
+        image_complete_path = image_directory + image_name
         image_name = image_name[:-4]
 
-        # complete processing package
+        # complete image_process package
         start = time.time()
-        original_image, processed_image, bordered_image = pyIP.master_image_processor(image_complete_Path)
+        original_image, processed_image, bordered_image = pyIP.master_image_processor(image_name, image_complete_path)
         end = time.time()
         total_time += end - start
         print("Processing Package Computation Time: ", round(total_time, 2))
 
-        # complete OCR package
+        # complete OCR_process package
         start = time.time()
+        processed_image = cv2.imread(f"..\\Images-Converted\\{image_name}_Processed.jpg", 1)
         date, products, vendor, vendor_url, averageConf = pyRI.master_image_read(image_name, processed_image)
         end = time.time()
         total_time += end - start
         print("Reader Package Computation Time: ", round(total_time, 2))
 
-        cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Original.jpg", original_image)
-        cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Processed.jpg", processed_image)
-        cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Border.jpg", bordered_image)
-        utility.writer(image_name, "Logs.txt", averageConf)
+        # cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Original.jpg", original_image)
+        # cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Processed.jpg", processed_image)
+        # cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Border.jpg", bordered_image)
         # config.saveImage('..\\Images-Converted\\', image_name, refinedImage)
 
 # to-do:
-# 1. try DPI trick for tess_conf, image_size pyIP l81, thicken text -> median blur, tess alt config for logo reading
-# 2. NN text classification model
-# 3. improve OCR conf
-#    confidence needs to be >95%
-# 4. ML model to predict product matching under respective categories
-# 5. set up mySQL DB
+# 1. improve OCR conf
+#    confidence needs to be >95%, tess alt config for logo reading
+# 2. ML model to predict product matching under respective categories
+# 3. set up mySQL DB
 
 # ['20220403_171741.jpg',    1 - FAIL       (-215:Assertion failed) reader.ptr != NULL in function 'cvDrawContours'
 #  '20220405_232339.jpg',    2 - FAIL       'charmap' codec can't encode character '\ufb01' in position 8: character maps to <undefined>
