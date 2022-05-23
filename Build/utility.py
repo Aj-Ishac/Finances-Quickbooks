@@ -1,11 +1,12 @@
+from operator import index
 import os
 import cv2
 import csv
 import sys
 import traceback
 import time
-
-from cv2 import log
+from pathlib import Path  
+import pandas 
 
 def export_ConfReport(img_name, list, averageConf):
     path = 'E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\'
@@ -97,6 +98,7 @@ def folder_parse(folder_name):
 
     return file_queue
 
+
 def writer(image_name, file_name, averageConf):
 
     index = 0
@@ -105,3 +107,13 @@ def writer(image_name, file_name, averageConf):
     print(f"{str(index)} - {image_name} PASS {str(averageConf)}%")
     f.close()
     index += 1
+
+
+def df_to_cvs(img_name, df):
+    indexNum = 0
+    while(os.path.exists(f'../Build/Data/{img_name}_%s.csv' % indexNum)):
+        indexNum += 1
+
+    filepath = Path(f'../Build/Data/{img_name}_%s.csv' % indexNum)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(filepath)

@@ -3,6 +3,8 @@ import datetime as dt
 import pandas as pd
 import re
 
+from zmq import NULL
+
 import utility
 
 def checkConfidence(img_name, imageTemplate):
@@ -71,7 +73,10 @@ def extract_products(source_text):
 
     # remove non-item listing and seperate tax, tip, and max(total) into their own vars
     total, tax, tip, index_of_end_product = 0, 0, 0, 0
+
+    # list of strings to detect as extras
     str_to_catch = ["tip", "cash", "debit", "tax", "change"]
+    # case correct product items and break when product list detected complete
     for index, item in enumerate(products_list):
         if "total" in item[0]:
             index_of_end_product = index
@@ -82,6 +87,7 @@ def extract_products(source_text):
         else:
             products_list[index] = (item[0].title(), item[1])
 
+    # iterate from n - 1 to product_list_complete index and assign/remove values accordingly
     for i in range(len(products_list) - 1, index_of_end_product - 1, -1):
         if "total" in products_list[i][0]:
             total = max(total, products_list[i][1])
@@ -95,43 +101,38 @@ def extract_products(source_text):
 
 
 def extract_date(source_text):
-    # collect text that matches date format m/d/Y
-    # [\d]{1,2}/[\d]{1,2}/[\d]{4}
-    # old regex: only counts mm/dd/yyyy
-    # new regex: [- /.] delimiters, dd/mm/yy, dd/mm/yyyy, mm/dd/yy, mm/dd/yyyy
-    date_regex = r"([0-9]{2}(/[0-9]{2,4}){2,4})"
+    # new regex: [- /] delimiters, d/m/Y, m/d/Y, m/d/y, d-m-y, d-m-Y, m-d-Y, m-d-y, d-m-y
+    date_regex = r"([0-9]{2}(/?-?[0-9]{2,4}){2,4})"
 
     dates_list = []
-    for line in source_text.split("\n"):
-        # scan lines that include date format [dd/mm/yyyy]
-        if re.match(date_regex, line):
-            date = line
-            break
+    # scan lines that include date_regex format
+    date_match = re.search(date_regex, source_text)
+    date_match = date_match.group(0)
 
-    if date:
+    if date_match:
         dtFormat_DATE = ('%m/%d/%Y', '%d/%m/%Y', '%m/%d/%y', '%d/%m/%y',
                          '%m-%d-%Y', '%d-%m-%Y', '%m-%d-%y', '%d-%m-%y')
         dtFormat_DATETIME = ('%m/%d/%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%d/%m/%y %H:%M:%S',
                              '%m-%d-%Y %H:%M:%S', '%d-%m-%Y %H:%M:%S', '%m-%d-%y %H:%M:%S', '%d-%m-%y %H:%M:%S')     
-        old_date = date
-        if len(date) == 10 or len(date) == 8:
+        old_date = date_match
+        if len(date_match) == 10 or len(date_match) == 8:
             for i in dtFormat_DATE:
-                if old_date != date:
+                if old_date != date_match:
                     break
                 try:
-                    date = dt.datetime.strptime(date, i).date()
+                    date_match = dt.datetime.strptime(date_match, i).date()
                 except ValueError:
                     pass
         else:
             for i in dtFormat_DATETIME:
-                if old_date != date:
+                if old_date != date_match:
                     break
                 try:
-                    date = dt.datetime.strptime(date, i).date()
+                    date_match = dt.datetime.strptime(date_match, i).date()
                 except ValueError:
                     pass
 
-    return date
+    return date_match
 
 
 def extract_vendor(source_text):
@@ -142,7 +143,7 @@ def extract_vendor(source_text):
         vendor_url = url_match.group(0)
         vendor_match = (vendor_url.split('.'))[0]
         return vendor_match.title(), vendor_url
-    return None
+    return NULL, NULL
 
 
 def master_image_read(img_name, img):
@@ -156,21 +157,25 @@ def master_image_read(img_name, img):
 
     dict_dataScan = {"products": products, "date": date, "vendor": vendor, "url": vendor_url}
     df = pd.DataFrame(data=dict_dataScan)
+    utility.df_to_cvs(img_name, df)
 
     # print(source_text.strip(), end="\n")
     print(df)
     print("Tip: ", tip, " Tax: ", tax, " Total: ", total)
 
-    return date, products,  vendor, vendor_url
-
+    return date, products,  vendor, vendor_url, averageConf
 
 # https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb
 # https://regex101.com/r/zG0fI5/1
+# https://regex-generator.olafneumann.org
 
 # ticket
 # 1. price cleanup before leaving item scan
-# 2. merge regex base lookup
+#    run a check on total detected in comparison to sum of item price values
+# 2. symbol data cleansing on vendor name
 # 3. current folder_files parse only looks for .jpg
+# 4. run a check on /d x for multiple quantity
+# 5. consider running a seperate tess config pass for logo NN learning
 
 # research:
 # http://www.haralick.org/conferences/71280952.pdf
