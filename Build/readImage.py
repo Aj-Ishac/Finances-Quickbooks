@@ -53,41 +53,45 @@ def readImage(img):
 # ('Subtota]', 33.95), ('Tax', 2.55), ('Total', 36.5), ('Tip :', 3.39), ('Total Ee', 33.89)]
 
 def extract_products(source_text):
-    # collect lines that include price points with strictly two decimal points
-    product_regex = r"\D{3,} \d+\.\d\d(?!\d)\n?"
-    product_matches = re.findall(product_regex, source_text)
+    products_list = []
+    product_regex = r"(\d+\.\d{2})(?!\d)"
+    id_regex = r" \d{5,} "
 
-    # parses the above into list[(product_name, product_price)]
-    products, price_regex = [], r"(\d+\.\d{1,2})"
-    for item in product_matches:
-        tokens = re.split(price_regex, item)
-        products.append((tokens[0].strip().replace('\n', ''), float(tokens[1])))
+    for line in source_text.split("\n"):
+        # scan lines that include a price tag and tokenize [name, price]
+        if re.search(product_regex, line):
+            item_token = re.split(product_regex, line)[:-1]
 
-    total, tip, tax = 0, 0, 0
+            # scan above filtered lines for ID to discard and correct input to [name w/o ID, price]
+            if re.search(id_regex, item_token[0]):
+                product_name = (re.split(id_regex, item_token[0])[0]).strip()
+                item_token[0] = product_name
+
+            products_list.append((item_token[0].strip(), float(item_token[1])))
+
     # remove non-item listing and seperate tax, tip, and max(total) into their own vars
-    for index, item in reversed(list(enumerate(products))):
+    total, tax, tip, index_of_end_product = 0, 0, 0, 0
+    str_to_catch = ["tip", "cash", "debit", "tax", "change"]
+    for index, item in enumerate(products_list):
         if "total" in item[0]:
-            total = max(total, item[1])
-            products.remove(item)
-        elif "tip" in item[0]:
-            tip = item[1]
-            products.remove(item)
-        elif "tax" in item[0]:
-            tax = item[1]
-            products.remove(item)
+            index_of_end_product = index
+            break
+        elif re.compile('|'.join(str_to_catch), re.IGNORECASE).search(item[0]):
+            index_of_end_product = index
+            break
         else:
-            products[index] = (item[0].title(), item[1])
+            products_list[index] = (item[0].title(), item[1])
 
-    # products.append(("tax", tax)) if tax > 0 else print("Tax does not exist.")
-    # products.append(("tip", tip)) if tip > 0 else print("tip does not exist.")
-    # products.append(("total", total)) if total > 0 else print("total does not exist.")
+    for i in range(len(products_list) - 1, index_of_end_product - 1, -1):
+        if "total" in products_list[i][0]:
+            total = max(total, products_list[i][1])
+        elif "tax" in products_list[i][0]:
+            tax = products_list[i][1]
+        elif "tip" in products_list[i][0]:
+            tip = products_list[i][1]
+        products_list.remove(products_list[i])
 
-    summed_total = sum([item[1] for item in products]) + tax
-    if total != summed_total:
-        total = summed_total
-        # raise Exception("OCR sum(products)/total mismatch!")
-
-    return products, tax, tip, total
+    return products_list, tax, tip, total
 
 
 def extract_date(source_text):
@@ -95,25 +99,49 @@ def extract_date(source_text):
     # [\d]{1,2}/[\d]{1,2}/[\d]{4}
     # old regex: only counts mm/dd/yyyy
     # new regex: [- /.] delimiters, dd/mm/yy, dd/mm/yyyy, mm/dd/yy, mm/dd/yyyy
-    date_regex = r"[\d]{1,2}/[\d]{1,2}/[\d]{4}"
-    matches = re.findall(date_regex, source_text)
+    date_regex = r"([0-9]{2}(/[0-9]{2,4}){2,4})"
 
     dates_list = []
-    [dates_list.append(dt.datetime.strptime(match, '%m/%d/%Y')) for match in matches]
+    for line in source_text.split("\n"):
+        # scan lines that include date format [dd/mm/yyyy]
+        if re.match(date_regex, line):
+            date = line
+            break
 
-    if len(dates_list) > 0:
-        date = (min(dates_list)).date()
-        return date
-    return None
+    if date:
+        dtFormat_DATE = ('%m/%d/%Y', '%d/%m/%Y', '%m/%d/%y', '%d/%m/%y',
+                         '%m-%d-%Y', '%d-%m-%Y', '%m-%d-%y', '%d-%m-%y')
+        dtFormat_DATETIME = ('%m/%d/%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%d/%m/%y %H:%M:%S',
+                             '%m-%d-%Y %H:%M:%S', '%d-%m-%Y %H:%M:%S', '%m-%d-%y %H:%M:%S', '%d-%m-%y %H:%M:%S')     
+        old_date = date
+        if len(date) == 10 or len(date) == 8:
+            for i in dtFormat_DATE:
+                if old_date != date:
+                    break
+                try:
+                    date = dt.datetime.strptime(date, i).date()
+                except ValueError:
+                    pass
+        else:
+            for i in dtFormat_DATETIME:
+                if old_date != date:
+                    break
+                try:
+                    date = dt.datetime.strptime(date, i).date()
+                except ValueError:
+                    pass
+
+    return date
 
 
 def extract_vendor(source_text):
-    url_regex = r'(http:\/\/|https:\/\/)?(www.)?([a-zA-Z0-9]+)[a-zA-Z0-9]*.[‌​a-z]{3}\.([a-z]+)'
+    # url_regex = r'(http:\/\/|https:\/\/)?(www.)?([a-zA-Z0-9]+)[a-zA-Z0-9]*.[‌​a-z]{3}\.([a-z]+)'
+    url_regex = r'([a-z]{2,}\.[a-z]{2,6}\b)'
     url_match = re.search(url_regex, source_text)
     if url_match is not None:
-        url_match = url_match.group(0)
-        vendor_match = (url_match.split('.')[:1])[0]
-        return vendor_match.title(), url_match
+        vendor_url = url_match.group(0)
+        vendor_match = (vendor_url.split('.'))[0]
+        return vendor_match.title(), vendor_url
     return None
 
 
@@ -133,7 +161,7 @@ def master_image_read(img_name, img):
     print(df)
     print("Tip: ", tip, " Tax: ", tax, " Total: ", total)
 
-    return date, products, vendor, vendor_url, averageConf
+    return date, products,  vendor, vendor_url
 
 
 # https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb
@@ -141,8 +169,7 @@ def master_image_read(img_name, img):
 
 # ticket
 # 1. price cleanup before leaving item scan
-# 2. expand on date regex identifier
-#    [- /.] delimiters, dd/mm/yy, dd/mm/yyyy, mm/dd/yy, mm/dd/yyyy
+# 2. merge regex base lookup
 # 3. current folder_files parse only looks for .jpg
 
 # research:

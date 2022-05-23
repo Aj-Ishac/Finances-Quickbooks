@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # file_queue = utility.folder_parse("Images-Raw")
     # file_queue = sorted(file_queue)
     # file_queue = ["20220420_213104.jpg", "20220421_001513.jpg", "20220425_200954.jpg", "20220428_031510.jpg"]
-    file_queue = ["20220508_211331.jpg"]    # , "20220428_031510.jpg", "20220405_232412.jpg", "20220421_001520.jpg"]
+    file_queue = ["20220428_031510.jpg"]    # , "20220428_031510.jpg", "20220405_232412.jpg", "20220421_001520.jpg"]
     for image_name in file_queue:
         total_time = 0
         image_directory = '..\\Images-Raw\\'
@@ -22,12 +22,15 @@ if __name__ == "__main__":
         # complete processing package
         start = time.time()
         original_image, processed_image, bordered_image = pyIP.master_image_processor(image_complete_Path)
-
+        end = time.time()
+        total_time += end - start
+        print("Processing Package Computation Time: ", round(total_time, 2))
         # complete OCR package
+        start = time.time()
         date, products, vendor, vendor_url, averageConf = pyRI.master_image_read(image_name, processed_image)
         end = time.time()
         total_time += end - start
-        print("Total Computation Time: ", round(total_time, 2))
+        print("Reader Package Computation Time: ", round(total_time, 2))
 
         cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Original.jpg", original_image)
         cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Processed.jpg", processed_image)
