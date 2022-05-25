@@ -11,8 +11,9 @@ if __name__ == "__main__":
     # file_queue = utility.folder_parse("Images-Raw")
     # file_queue = sorted(file_queue)
 
-    # new batch to parse
-    file_queue = ["20220405_232339", "20220418_191924", "20220420_213119", "20220428_031519", "20220504_120549", "20220504_120636", "20220508_211331"]
+    # batch to process
+    file_queue = ["20220420_213112.jpg"]
+
     total_runtime = []
     for image_name in file_queue:
         curr_runtime, process_runtime = 0, 0
@@ -43,6 +44,7 @@ if __name__ == "__main__":
         # cv2.imwrite(f"..\\Images-Converted\\{image_name}_{averageConf}Border.jpg", bordered_image)
         utility.writer(image_name, "..\\Build\\Logs.txt", averageConf)
         # config.saveImage('..\\Images-Converted\\', image_name, refinedImage)
+
     print(f"Total Running Comp. Time: , {round(sum(total_runtime), 2)}s")
 
 # to-do:
@@ -52,16 +54,16 @@ if __name__ == "__main__":
 # 3. set up mySQL DB
 
 # ['20220403_171741.jpg',    1 - FAIL       (-215:Assertion failed) reader.ptr != NULL in function 'cvDrawContours'
-#  '20220405_232339.jpg',    2 - FAIL       'charmap' codec can't encode character '\ufb01' in position 8: character maps to <undefined>
-#  '20220405_232352.jpg',    3 - FAIL 70%   cannot unpack non-iterable NoneType object
+#  '20220405_232339.jpg',    2 - FAIL       Image not rotated correctly -> TypeError: sequence item 26: expected str instance, float found
+#  '20220405_232352.jpg',    3 - PASS 65%   cannot unpack non-iterable NoneType object
 #  '20220405_232412.jpg',    4 - PASS 79%   
-#  '20220405_232446.jpg',    5 - FAIL 73%   cannot unpack non-iterable NoneType object
+#  '20220405_232446.jpg',    5 - FAIL 73%   Image not rotated correctly -> AttributeError: 'NoneType' object has no attribute 'group'
 #  '20220406_231142.jpg',    6 - FAIL 73%   cannot unpack non-iterable NoneType object
 #  '20220417_151151.jpg',    7 - FAIL       local variable 'avg_conf' referenced before assignment
-#  '20220418_191924.jpg',    8 - FAIL       'charmap' codec can't encode character '\ufb01' in position 12: character maps to <undefined>
+#  '20220418_191924.jpg',    8 - PASS 82%   
 #  '20220420_213104.jpg',    9 - PASS 83%   
-#  '20220420_213112.jpg',   10 - FAIL 61%   cannot unpack non-iterable NoneType object
-#  '20220420_213119.jpg',   11 - FAIL       'charmap' codec can't encode character '\ufb02' in position 20: character maps to <undefined>
+#  '20220420_213112.jpg',   10 - PASS 75%   cannot unpack non-iterable NoneType object
+#  '20220420_213119.jpg',   11 - PASS 80%   tax was not scanned because 4.25's dot was missing from scan. if confidence > threshold, assign extras: total - products
 #  '20220420_213127.jpg',   12 - FAIL       (-215:Assertion failed) reader.ptr != NULL in function 'cvDrawContours'
 #  '20220420_213134.jpg',   13 - FAIL 78%   cannot unpack non-iterable NoneType object
 #  '20220421_001513.jpg',   14 - PASS 72%   
@@ -74,22 +76,24 @@ if __name__ == "__main__":
 #  '20220428_031457.jpg',   21 - FAIL       local variable 'avg_conf' referenced before assignment
 #  '20220428_031503.jpg',   22 - FAIL 63%   cannot unpack non-iterable NoneType object
 #  '20220428_031510.jpg',   23 - PASS 85%
-#  '20220428_031519.jpg',   24 - FAIL       'charmap' codec can't encode character '\ufb01' in position 27: character maps to <undefined>
+#  '20220428_031519.jpg',   24 - FAIL       AttributeError: 'NoneType' object has no attribute 'group'
 #  '20220428_031527.jpg',   25 - FAIL 36%   cannot unpack non-iterable NoneType object
-#  '20220504_120549.jpg',   26 - FAIL       'charmap' codec can't encode character '\ufb02' in position 6: character maps to <undefined>
+#  '20220504_120549.jpg',   26 - PASS 72%       
 #  '20220504_120558.jpg',   27 - FAIL 63%   cannot unpack non-iterable NoneType object
 #  '20220504_120610.jpg',   28 - FAIL 75%   cannot unpack non-iterable NoneType object
 #  '20220504_120619.jpg',   29 - FAIL 44%   cannot unpack non-iterable NoneType object
-#  '20220504_120636.jpg',   30 - FAIL       'charmap' codec can't encode character '\ufb01' in position 28: character maps to <undefined>
+#  '20220504_120636.jpg',   30 - PASS 70%   
 #  '20220504_120943.jpg',   31 - FAIL       local variable 'avg_conf' referenced before assignment
 #  '20220504_120947.jpg',   32 - FAIL       (-215:Assertion failed) reader.ptr != NULL in function 'cvDrawContours'
 #  '20220504_120951.jpg',   33 - FAIL       error: (-215:Assertion failed) reader.ptr != NULL in function 'cvDrawContours'
 #  '20220505_172117.jpg',   34 - FAIL       local variable 'avg_conf' referenced before assignment
 #  '20220508_171459.jpg',   35 - FAIL       local variable 'avg_conf' referenced before assignment
-#  '20220508_211331.jpg',   36 - FIX  70%   'charmap' codec can't encode character '\ufb01' in position 1: character maps to <undefined>
+#  '20220508_211331.jpg',   36 - PASS 80%   
 #  'bill3.jpg',             37 - FAIL 45%   cannot unpack non-iterable NoneType object
 #  'walmart-template.jpg'   38 - FAIL       'NoneType' object is not iterable
 
-# parsed edge cases
-# file_queue = ["20220421_001520.jpg", "20220405_232412.jpg", "20220425_200954.jpg", 
-#               "20220421_001513.jpg", "20220420_213104.jpg", "20220428_031510.jpg"]
+# parsed edge cases 13/37
+# file_queue = ["20220421_001520.jpg", "20220405_232412.jpg", "20220425_200954.jpg",
+#               "20220421_001513.jpg", "20220420_213104.jpg", "20220428_031510.jpg",
+#               "20220418_191924.jpg", "20220420_213119.jpg", "20220504_120636.jpg",
+#               "20220508_211331.jpg"]

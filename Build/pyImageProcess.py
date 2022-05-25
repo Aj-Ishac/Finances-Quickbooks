@@ -156,7 +156,6 @@ def master_image_processor(image_name, path):
     skewed_image = skew_correct(rotated_Image, ratio)
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
-    # processed_Image = process_Image(skewed_Image)
     processed_image = processMethod3(skewed_image)
 
     # boredered image not to be used for reading
@@ -178,14 +177,8 @@ def master_image_processor(image_name, path):
 
 
 # tickets:
-# 1. skew_correct has the tendency of picking incorrect ROI to process when lighting is insufficient
-#    fix: run calc on all image contours and define ROI by largest contour area
-# 2. fix_rotation() leans rotation intent towards 90deg upward state
-#    if image is received upside down, end result will still be upside down with rotation fix
-#    fix: may need to run a pass on detecting angle of text and invert y-scale if flip detected
-# 3. image processing improvements - morph and dillate
-#    https://docs.opencv.org/3.4/db/df6/tutorial_erosion_dilatation.html
-#    https://stackoverflow.com/questions/9480013/image-processing-to-improve-tesseract-ocr-accuracy
+# 2. fix_rotation() is aligning incorrectly
+#    resulting error: cannot unpack non-iterable NoneType object
 
 # research:
 # https://nanonets.com/blog/deep-learning-ocr/#preprocessing

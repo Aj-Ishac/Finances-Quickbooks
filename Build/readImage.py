@@ -1,3 +1,4 @@
+from genericpath import exists
 import pytesseract as tess
 import datetime as dt
 import pandas as pd
@@ -23,9 +24,10 @@ def checkConfidence(img_name, imageTemplate):
         line_conf.append(["Average", avg_conf])
 
     print(*line_conf, sep='\n')
-    # averageConf = utility.export_ConfReport(img_name, line_conf, avg_conf)
     return avg_conf
 
+# !!!!
+# https://stackoverflow.com/questions/55406993/how-to-get-confidence-of-each-line-using-pytesseract
 
 def readImage(img):
     custom_config = ('-l eng --oem 1 --psm 4')
@@ -53,9 +55,8 @@ def extract_products(source_text):
     total, tax, tip, index_of_end_product = 0, 0, 0, 0
 
     # list of strings to detect as extras
-    str_to_catch = ["tip", "cash", "debit", "tax", "change"]
-    chars_blacklist = r"^‘$-!"
-    # case correct product items and break when product list detected complete
+    str_to_catch = ["tip ", "cash ", "debit ", "tax ", "change "]
+    # refine product name data and mark the end point of when our product listing is determined complete
     for index, item in enumerate(products_list):
         if "total" in item[0]:
             index_of_end_product = index
@@ -64,10 +65,11 @@ def extract_products(source_text):
             index_of_end_product = index
             break
         else:
-            # item[0] = re.sub('[^a-zA-Z0-9 \n\.]', "", products_list[0][0])
-            products_list[index] = ((re.sub('[^a-zA-Z0-9 \n\.]', "", item[0])).title(), item[1])
-
-    # iterate from n - 1 to product_list_complete index and assign/remove values accordingly
+            # removme all chars not present in this regex list: [^a-zA-Z0-9 \n]
+            temp_item = (re.sub('[^a-zA-Z0-9 \n]', "", item[0]))
+            products_list[index] = (' '.join(temp_item.split()).title(), item[1])
+            
+    # iterate from [n - 1 to product_list_complete index] and assign/remove values accordingly
     for i in range(len(products_list) - 1, index_of_end_product - 1, -1):
         if "total" in products_list[i][0]:
             total = max(total, products_list[i][1])
@@ -89,39 +91,42 @@ def extract_date(source_text):
     date_match = date_match.group(0)
 
     if date_match:
-        dtFormat_DATE = ('%m/%d/%Y', '%d/%m/%Y', '%m/%d/%y', '%d/%m/%y',
-                         '%m-%d-%Y', '%d-%m-%Y', '%m-%d-%y', '%d-%m-%y')
-        dtFormat_DATETIME = ('%m/%d/%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%d/%m/%y %H:%M:%S',
-                             '%m-%d-%Y %H:%M:%S', '%d-%m-%Y %H:%M:%S', '%m-%d-%y %H:%M:%S', '%d-%m-%y %H:%M:%S')     
+        dtFormat_DATE = ['%m/%d/%Y', '%d/%m/%Y', '%m/%d/%y', '%d/%m/%y']
+        dtFormat_DATE2 = ['%m-%d-%Y', '%d-%m-%Y', '%m-%d-%y', '%d-%m-%y']
+        dtFormat_DATETIME = ['%m/%d/%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%m/%d/%y %H:%M:%S', '%d/%m/%y %H:%M:%S']
+        dtFormat_DATETIME2 = ['%m-%d-%Y %H:%M:%S', '%d-%m-%Y %H:%M:%S', '%m-%d-%y %H:%M:%S', '%d-%m-%y %H:%M:%S']
+
+        applicable_dtFormat = []
         old_date = date_match
         if len(date_match) > 10:
-            for i in dtFormat_DATETIME:
-                if old_date != date_match:
-                    break
-                try:
-                    date_match = dt.datetime.strptime(date_match, i).date()
-                except ValueError:
-                    pass
+            if "-" in date_match:
+                applicable_dtFormat = dtFormat_DATETIME2
+            else:
+                applicable_dtFormat = dtFormat_DATETIME
         else:
-            for i in dtFormat_DATE:
-                if old_date != date_match:
-                    break
-                try:
-                    date_match = dt.datetime.strptime(date_match, i).date()
-                except ValueError:
-                    pass
+            if "-" in date_match:
+                applicable_dtFormat = dtFormat_DATE2
+            else:
+                applicable_dtFormat = dtFormat_DATE
+
+        for i in applicable_dtFormat:
+            if old_date != date_match:
+                break
+            try:
+                date_match = dt.datetime.strptime(date_match, i).date()
+            except ValueError:
+                pass
+
     return date_match
 
-
 def extract_vendor(source_text):
-    # url_regex = r'(http:\/\/|https:\/\/)?(www.)?([a-zA-Z0-9]+)[a-zA-Z0-9]*.[‌​a-z]{3}\.([a-z]+)'
     url_regex = r'([a-z]{2,}\.[a-z]{2,6}\b)'
     url_match = re.search(url_regex, source_text)
     if url_match is not None:
         vendor_url = url_match.group(0)
         vendor_match = (vendor_url.split('.'))[0]
         return vendor_match.title()
-    return "", ""
+    return ""
 
 
 def master_image_read(img_name, img):
@@ -129,37 +134,43 @@ def master_image_read(img_name, img):
     averageConf = checkConfidence(img_name, img)
     source_text = readImage(img)
 
-    products, tax, tip, total = extract_products(source_text)            # list(Item, Price)
-    date = extract_date(source_text)                    # date_Date
-    vendor = extract_vendor(source_text)    # string_Name, string_Url
+    products, tax, tip, total = extract_products(source_text)               # list(Item, Price)
+    date = extract_date(source_text)                                        # date_Date
+    vendor = extract_vendor(source_text)                                    # string_Name
 
-    dict_dataScan = {"products": products, "date": date, "vendor": ""}
+    dict_dataScan = {"products": products, "date": date, "vendor": "temp_vendor"}
     df = pd.DataFrame(data=dict_dataScan)
-    utility.df_to_cvs(img_name, averageConf, df)
+    utility.df_to_cvs(img_name, df, averageConf)
 
     # print(source_text.strip(), end="\n")
     print(df)
     print("Tip: ", tip, " Tax: ", tax, " Total: ", total)
 
+    # overall_data = data_appender(products, tax, tip, total, date, vendor)
+    # overall_df = pd.DataFrame(data=overall_data)
+    # print(overall_df)
+    # utility.df_to_cvs(img_name, overall_df)
+
     return date, products, vendor, averageConf
 
-# https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb
-# https://regex101.com/r/zG0fI5/1
-# https://regex-generator.olafneumann.org
 
 # ticket
 # 1. price cleanup before leaving item scan
 #    run a check on total detected in comparison to sum of item price values
 # 2. data cleansing
 #    20220420_213104 - vendor will be tied to logo NN learning else pre-address name?
-# 3. current folder_files parse only looks for .jpg
-# 4. run a check on /d x for multiple quantity
-# 5. consider running a seperate tess config pass for logo NN learning
+#    replace double spaces with one space
+# 3. if total_price of scan is low confidence, adjust by sum(scanned products)
+#    run price scan on items with stripped spacing
+# 4. consider running a seperate tess config pass for logo NN learning
 
-# characters to blacklist from name:
-# this needs to run before we title()
-# ‘ $ - ! ] [ ]
+# notes:
+# 1. if price is associated with an empty product name, indicates products are not on the same line as price -> call for supervision
+# 2. current folder_files parse only looks for .jpg, expand to png after edge case cleanup
 
+# edge cases:
+# 1. item "('qtips swabs', 6.47)" caused false positive and detected end of products @ index 0
+#    -> space followup after blacklisted_keyword to tighten check to end of word matches
 
 # research:
 # http://www.haralick.org/conferences/71280952.pdf
@@ -168,3 +179,11 @@ def master_image_read(img_name, img):
 # https://jaafarbenabderrazak-info.medium.com/ocr-with-tesseract-opencv-and-python-d2c4ec097866
 # https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
 
+# https://stackoverflow.com/questions/53761979/how-can-i-train-my-python-based-ocr-with-tesseract-to-train-with-different-natio
+# https://i.ytimg.com/vi/1ns8tGgdpLY/maxresdefault.jpg
+# https://pretius.com/blog/ocr-tesseract-training-data/
+# https://stackoverflow.com/questions/41295527/tesseract-training-for-a-new-font
+
+# https://github.com/cherry247/OCR-bill-detection/blob/master/ocr.ipynb
+# https://regex101.com/r/zG0fI5/1
+# https://regex-generator.olafneumann.org
