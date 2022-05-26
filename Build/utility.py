@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 from PIL import Image
-
+import datetime
 
 def export_ConfReport(img_name, list, averageConf):
     path = 'E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\'
@@ -94,13 +94,9 @@ def folder_parse(folder_name):
 
 
 def writer(image_name, file_name, averageConf):
-
-    index = 0
-    f = open(file_name, "a")
-    f.write(f"{str(index)} - {image_name} PASS {str(averageConf)}%\n")
-    print(f"{str(index)} - {image_name} PASS {str(averageConf)}%")
-    f.close()
-    index += 1
+    with open(file_name, "a") as f:
+        f.write(f"{datetime.date.today()} - {image_name}: {str(averageConf)}%\n")
+        print(f"{datetime.date.today()} - {image_name}: {str(averageConf)}%")
 
 
 def convert_dpi(image_complete_path):

@@ -11,7 +11,7 @@ import utility
 def checkConfidence(img_name, imageTemplate):
     text = tess.image_to_data(imageTemplate, output_type='data.frame')
     text = text[text.conf != -1]
-    lines = text.groupby(['page_num', 'block_num', 'par_num', 'line_num'])['text'].apply(lambda x: ' '.join(list(x))).tolist()
+    lines = text.fillna('').groupby(['page_num', 'block_num', 'par_num', 'line_num'])['text'].apply(lambda x: ' '.join(list(x))).tolist()
     confs = text.groupby(['page_num', 'block_num', 'par_num', 'line_num'])['conf'].mean().tolist()
 
     line_conf = []
@@ -23,8 +23,10 @@ def checkConfidence(img_name, imageTemplate):
         avg_conf = round(sum(confs) / len(confs), 2)
         line_conf.append(["Average", avg_conf])
 
-    print(*line_conf, sep='\n')
-    return avg_conf
+        print(*line_conf, sep='\n')
+        return avg_conf
+    return
+
 
 # !!!!
 # https://stackoverflow.com/questions/55406993/how-to-get-confidence-of-each-line-using-pytesseract
@@ -55,7 +57,7 @@ def extract_products(source_text):
     total, tax, tip, index_of_end_product = 0, 0, 0, 0
 
     # list of strings to detect as extras
-    str_to_catch = ["tip ", "cash ", "debit ", "tax ", "change "]
+    str_to_catch = ["tip", "cash", "debit", "tax", "change", "sale"]
     # refine product name data and mark the end point of when our product listing is determined complete
     for index, item in enumerate(products_list):
         if "total" in item[0]:
@@ -66,9 +68,9 @@ def extract_products(source_text):
             break
         else:
             # removme all chars not present in this regex list: [^a-zA-Z0-9 \n]
-            temp_item = (re.sub('[^a-zA-Z0-9 \n]', "", item[0]))
+            temp_item = (re.sub('[^a-zA-Z0-9 \n]', " ", item[0]))
             products_list[index] = (' '.join(temp_item.split()).title(), item[1])
-            
+
     # iterate from [n - 1 to product_list_complete index] and assign/remove values accordingly
     for i in range(len(products_list) - 1, index_of_end_product - 1, -1):
         if "total" in products_list[i][0]:
@@ -157,12 +159,12 @@ def master_image_read(img_name, img):
 # ticket
 # 1. price cleanup before leaving item scan
 #    run a check on total detected in comparison to sum of item price values
+#    if total_price of scan is low confidence, adjust by sum(scanned products)
 # 2. data cleansing
 #    20220420_213104 - vendor will be tied to logo NN learning else pre-address name?
-#    replace double spaces with one space
-# 3. if total_price of scan is low confidence, adjust by sum(scanned products)
-#    run price scan on items with stripped spacing
-# 4. consider running a seperate tess config pass for logo NN learning
+# 3. consider running a seperate tess config pass for logo NN learning
+# 4. blacklist false positives fix:
+#    scan for caps sensitive blacklisted words before we .lower() evrything
 
 # notes:
 # 1. if price is associated with an empty product name, indicates products are not on the same line as price -> call for supervision

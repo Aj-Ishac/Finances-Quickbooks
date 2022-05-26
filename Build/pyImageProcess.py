@@ -95,14 +95,12 @@ def generate_borders(img):
 
 
 def fix_rotation(img):
-    # https://stackoverflow.com/questions/46731947/detect-angle-and-rotate-an-image-in-python/46732132
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_edges = cv2.Canny(img_gray, 100, 100, apertureSize=3)
     lines = cv2.HoughLinesP(img_edges, 1, math.pi / 180.0, 100, minLineLength=100, maxLineGap=5)
 
     angles = []
     for [[x1, y1, x2, y2]] in lines:
-        # cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
         angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
         angles.append(angle)
 
@@ -112,8 +110,8 @@ def fix_rotation(img):
     # Adjust angle
     if median_angle < -45:
         median_angle = -(90 + median_angle)
-    elif median_angle == 0:
-        median_angle += 90
+    # elif median_angle == 0:
+    #     median_angle += 90
     else:
         median_angle = -median_angle
 
@@ -161,10 +159,10 @@ def master_image_processor(image_name, path):
     # boredered image not to be used for reading
     bordered_image = generate_borders(processed_image)
 
-    cv2.imwrite(f"..\\Images-Converted\\{image_name}_Original.jpg", skewed_image)
-    cv2.imwrite(f"..\\Images-Converted\\{image_name}_Processed.jpg", processed_image)
-    cv2.imwrite(f"..\\Images-Converted\\{image_name}_Border.jpg", bordered_image)
-    file_to_dpi = f"..\\Images-Converted\\{image_name}_Processed.jpg"
+    cv2.imwrite(f"..\\Images-Converted\\Original\\{image_name}_Original.jpg", skewed_image)
+    cv2.imwrite(f"..\\Images-Converted\\Processed\\{image_name}_Processed.jpg", processed_image)
+    cv2.imwrite(f"..\\Images-Converted\\Boredered\\{image_name}_Border.jpg", bordered_image)
+    file_to_dpi = f"..\\Images-Converted\\Processed\\{image_name}_Processed.jpg"
     utility.convert_dpi(file_to_dpi)
 
     # cv2.imshow("Original", imutils.resize(image, height=850))
