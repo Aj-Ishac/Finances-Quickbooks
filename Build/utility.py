@@ -8,41 +8,41 @@ from PIL import Image
 import datetime
 
 def export_ConfReport(img_name, list, averageConf):
-    path = 'E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\'
+    path = "E:\\Personal Projects\\ReceiptScanner\\Confidence Reports\\"
     averageConf = int(averageConf)
     img_name = img_name[:-3]
 
     if not os.path.isdir(path):
         os.makedirs(path)
 
-    file = open((f"{path}{img_name}_{averageConf}.csv"), 'w', encoding="utf-8", newline='')
+    file = open((f"{path}{img_name}_{averageConf}.csv"), "w", encoding="utf-8", newline="")
     with file:
         write = csv.writer(file)
         write.writerows(list)
 
-    print('------------------------------------')
-    print(f'CSV Export: {img_name}_{averageConf}.csv')
-    print(f'Average Confidence: {averageConf}%\n')
+    print("------------------------------------")
+    print(f"CSV Export: {img_name}_{averageConf}.csv")
+    print(f"Average Confidence: {averageConf}%\n")
     return averageConf
 
 
-def conditional_ExitSave(image_name, image_array, folder_name='Local-Saves'):
-    file_name = f'{image_name}'
-    file_Path = f'..\\{folder_name}\\'
-    postfix = 'jpg'
+def conditional_ExitSave(image_name, image_array, folder_name="Local-Saves"):
+    file_name = f"{image_name}"
+    file_Path = f"..\\{folder_name}\\"
+    postfix = "jpg"
 
     k = cv2.waitKey(0)
-    if k == ord('s'):       # if 's' key was pressed then save and exit
+    if k == ord("s"):       # if "s" key was pressed then save and exit
         indexNum = 0
         if not os.path.isdir(file_Path):
             os.makedirs(file_Path)
-        while(os.path.exists(f'{file_Path}{file_name}_%s.{postfix}' % indexNum)):
+        while(os.path.exists(f"{file_Path}{file_name}_%s.{postfix}" % indexNum)):
             indexNum += 1
 
-        edited_name = (f'{file_Path}{file_name}_%s.{postfix}' % indexNum)
+        edited_name = (f"{file_Path}{file_name}_%s.{postfix}" % indexNum)
 
-        cv2.imwrite(f'{file_Path}{edited_name}', image_array)
-        print(f'Mannual Export: {file_Path}{file_name}')
+        cv2.imwrite(f"{file_Path}{edited_name}", image_array)
+        print(f"Mannual Export: {file_Path}{file_name}")
         cv2.destroyAllWindows()
     else:
         cv2.destroyAllWindows()
@@ -50,15 +50,15 @@ def conditional_ExitSave(image_name, image_array, folder_name='Local-Saves'):
 
 def saveImage(filePath, imageName, fileName):
     indexNum = 0
-    prefix_name = imageName.partition('.')[0]
-    postfix_name = imageName.partition('.')[2]
+    prefix_name = imageName.partition(".")[0]
+    postfix_name = imageName.partition(".")[2]
 
     if not os.path.isdir(filePath):
         os.makedirs(filePath)
-    while(os.path.exists(f'{filePath}{prefix_name}_Edit%s.{postfix_name}' % indexNum)):
+    while(os.path.exists(f"{filePath}{prefix_name}_Edit%s.{postfix_name}" % indexNum)):
         indexNum += 1
-    edited_name = (f'{prefix_name}_Edit%s.{postfix_name}' % indexNum)
-    cv2.imwrite(f'{filePath}{edited_name}', fileName)
+    edited_name = (f"{prefix_name}_Edit%s.{postfix_name}" % indexNum)
+    cv2.imwrite(f"{filePath}{edited_name}", fileName)
 
 
 def WHERE(back=0):
@@ -77,10 +77,10 @@ def start_time():
 def end_time(start):
     # mark end time and print computation time and where func resides
     end = time.time()
-    print('------------------------------------')
+    print("------------------------------------")
     print(WHERE(1))
-    print(f'Computation Time: {round((end - start), 2)}s\
-          \n------------------------------------')
+    print(f"Computation Time: {round((end - start), 2)}s\
+          \n------------------------------------")
 
 
 def folder_parse(folder_name):
@@ -105,6 +105,6 @@ def convert_dpi(image_complete_path):
 
 
 def df_to_cvs(img_name, df, averageConf=0):
-    filepath = Path(f'../Confidence Reports/{img_name}_df{round(averageConf, 0)}.csv')
+    filepath = Path(f"../Confidence Reports/{img_name}_df{round(averageConf, 0)}.csv")
     filepath.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(filepath)

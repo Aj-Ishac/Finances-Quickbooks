@@ -75,6 +75,10 @@ def skew_correct(img, ratio):
         if len(approx) == 4:
             screenCnt = approx
             break
+
+    if screenCnt is None:
+        raise Exception(("Could not find receipt outline. Try debugging your edge detection and contour steps."))
+
     cv2.drawContours(img, [screenCnt], -1, (0, 255, 0), 2)
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
     warped = cv2.resize(warped, (0, 0), fx=3.35, fy=3.35)
@@ -101,6 +105,7 @@ def fix_rotation(img):
 
     angles = []
     for [[x1, y1, x2, y2]] in lines:
+        # cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
         angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
         angles.append(angle)
 
@@ -110,8 +115,6 @@ def fix_rotation(img):
     # Adjust angle
     if median_angle < -45:
         median_angle = -(90 + median_angle)
-    # elif median_angle == 0:
-    #     median_angle += 90
     else:
         median_angle = -median_angle
 
@@ -165,18 +168,14 @@ def master_image_processor(image_name, path):
     file_to_dpi = f"..\\Images-Converted\\Processed\\{image_name}_Processed.jpg"
     utility.convert_dpi(file_to_dpi)
 
-    # cv2.imshow("Original", imutils.resize(image, height=850))
-    # cv2.imshow("Skewed", imutils.resize(skewed_Image, height=850))
-    # cv2.imshow("Processed", imutils.resize(processed_Image, height=850))
+    cv2.imshow("Original", imutils.resize(image, height=850))
+    cv2.imshow("Skewed", imutils.resize(skewed_image, height=850))
+    cv2.imshow("Processed", imutils.resize(processed_image, height=850))
 
-    # 's' press to save to local-saves, exits on any other key press
-    # utility.conditional_ExitSave('Bordered', bordered_image)
+    # "s" press to save to local-saves, exits on any other key press
+    utility.conditional_ExitSave("Bordered", bordered_image)
     return skewed_image, processed_image, bordered_image
 
-
-# tickets:
-# 2. fix_rotation() is aligning incorrectly
-#    resulting error: cannot unpack non-iterable NoneType object
 
 # research:
 # https://nanonets.com/blog/deep-learning-ocr/#preprocessing
