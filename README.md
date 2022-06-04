@@ -4,6 +4,6 @@ Finances Quickbooks is a **Work-In-Progress** web-application that makes keeping
 
 The application is a tool aimed at making budget managing that much easier. More to come!
 
-**Tech Used**: Python, OpenCV, pyTesseract, Machine Learning, mySQL, Flask  
+**Tech Used**: Python, OpenCV, pyTesseract, Deep Learning, mySQL
 
 
