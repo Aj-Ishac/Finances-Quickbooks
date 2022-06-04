@@ -6,6 +6,7 @@ from scipy import ndimage
 
 import utility
 
+
 def order_points(pts):
     # assign rect vertex points in ordered format
     rect = np.zeros((4, 2), dtype="float32")
@@ -16,8 +17,6 @@ def order_points(pts):
     diff = np.diff(pts, axis=1)
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
-
-    # return the ordered coordinates
     return rect
 
 
@@ -85,13 +84,24 @@ def skew_correct(img, ratio):
     return warped
 
 
+def extend_rBorder(img):
+    if img is None:
+        return -1
+
+    img = generate_borders(img)
+    BACKGROUND_COLOR = [96, 100, 107]
+    right = int(1 * img.shape[1])
+    bordered_image = cv2.copyMakeBorder(img, 0, 0, 0, right, cv2.BORDER_CONSTANT, None, value=BACKGROUND_COLOR)
+    return bordered_image
+
+
 def generate_borders(img):
     if img is None:
         return -1
 
-    top = int(0.005 * img.shape[0])
+    top = int(0.0025 * img.shape[0])
     bottom = top
-    left = int(0.01 * img.shape[1])
+    left = int(0.005 * img.shape[1])
     right = left
 
     bordered_image = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, None, 0)
@@ -158,9 +168,7 @@ def master_image_processor(image_name, path):
 
     # image processing loop to remove light/shadow effects, noise gates and folding artifacts
     processed_image = processMethod3(skewed_image)
-
-    # boredered image not to be used for reading
-    bordered_image = generate_borders(processed_image)
+    bordered_image = extend_rBorder(skewed_image)
 
     cv2.imwrite(f"..\\Images-Converted\\Original\\{image_name}_Original.jpg", skewed_image)
     cv2.imwrite(f"..\\Images-Converted\\Processed\\{image_name}_Processed.jpg", processed_image)
@@ -168,13 +176,13 @@ def master_image_processor(image_name, path):
     file_to_dpi = f"..\\Images-Converted\\Processed\\{image_name}_Processed.jpg"
     utility.convert_dpi(file_to_dpi)
 
-    cv2.imshow("Original", imutils.resize(image, height=850))
-    cv2.imshow("Skewed", imutils.resize(skewed_image, height=850))
-    cv2.imshow("Processed", imutils.resize(processed_image, height=850))
+    # cv2.imshow("Original", imutils.resize(image, height=850))
+    # cv2.imshow("Skewed", imutils.resize(skewed_image, height=850))
+    # cv2.imshow("Processed", imutils.resize(processed_image, height=850))
 
     # "s" press to save to local-saves, exits on any other key press
     utility.conditional_ExitSave("Bordered", bordered_image)
-    return skewed_image, processed_image, bordered_image
+    return bordered_image
 
 
 # research:

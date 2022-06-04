@@ -1,7 +1,7 @@
-from audioop import avg
 import pytesseract as tess
 import datetime as dt
 import pandas as pd
+import cv2
 import re
 
 import utility
@@ -146,7 +146,7 @@ def extract_vendor(source_text):
         vendor_match = (vendor_url.split("."))[0]
         return "TEMP_VENDOR"
         return vendor_match.title()
-        
+
     return "TEMP_VENDOR"
 
 
@@ -177,13 +177,6 @@ def master_image_read(img_name, img):
 
     # utility.df_to_cvs(img_name, overall_df)
     return scan_results, averageConf
-
-# product_info = [[('14 Jr Drs Swir Jk', 19.99), "2020-04-03", 'temp_vendor'],
-#                 [('59 Mens Acc Gft', 9.99), "2020-04-03", 'temp_vendor'],
-#                 [('59 Mens Acc Gft', 7.99), "2020-04-03", 'temp_vendor'],
-#                 [('29 Mens Footwear', 14.99), "2020-04-03", 'temp_vendor'],
-#                 [('25 Ladies Ftwr', 19.99), "2020-04-03", 'temp_vendor'],
-#                 [('85 Gourmet Food', 3.99), "2020-04-03", 'temp_vendor']]
 
 # ticket
 # 1. price cleanup before leaving item scan

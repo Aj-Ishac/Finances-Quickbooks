@@ -11,8 +11,20 @@ db = mysql.connector.connect(
 mycursor = db.cursor()
 mycursor.execute("CREATE DATABASE IF NOT EXISTS product_listings")
 
-T1_user_db = "CREATE TABLE IF NOT EXISTS user_db (email VARCHAR(30) PRIMARY KEY, first_name VARCHAR(30), last_name VARCHAR(30), DOB DATE, date_created datetime, password VARCHAR(30))"
-T2_receipt_scans_db = "CREATE TABLE IF NOT EXISTS receipt_scans_db (email VARCHAR(30), product_name VARCHAR(50), product_price FLOAT, vendor VARCHAR(50), date_created datetime)"
+T1_user_db = "CREATE TABLE IF NOT EXISTS user_db\
+              (email VARCHAR(30) PRIMARY KEY,\
+               first_name VARCHAR(30),\
+               last_name VARCHAR(30),\
+               DOB DATE,\
+               date_created datetime,\
+               password VARCHAR(30))"
+
+T2_receipt_scans_db = "CREATE TABLE IF NOT EXISTS receipt_scans_db\
+                       (email VARCHAR(30),\
+                       product_name VARCHAR(50),\
+                       product_price FLOAT,\
+                       vendor VARCHAR(50),\
+                       date_created datetime)"
 
 mycursor.execute(T1_user_db)
 mycursor.execute(T2_receipt_scans_db)

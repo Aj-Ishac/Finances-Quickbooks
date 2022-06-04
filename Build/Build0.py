@@ -1,11 +1,13 @@
 import time
 import cv2
+import imutils
 
 import utility
 import pytesseract as tess
 import pyImageProcess as pyIP
 import readImage as pyRI
 import db_connector as dbc
+
 
 if __name__ == "__main__":
     tess.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -23,22 +25,21 @@ if __name__ == "__main__":
 
         start = time.time()
         # Image_Processing Package
-        original_image, processed_image, bordered_image = pyIP.master_image_processor(image_name, image_complete_path)
+        bordered_image = pyIP.master_image_processor(image_name, image_complete_path)
 
         # Reader Package
         processed_image = cv2.imread(f"..\\Images-Converted\\Processed\\{image_name}_Processed.jpg", 1)
         scan_results, averageConf = pyRI.master_image_read(image_name, processed_image)
 
         utility.writer(image_name, "..\\Build\\Logs.txt", averageConf)
-        # os.system("pause")
-
-        user_data = ["test.w@gmail.com", "Aj", "Ishac", "1954/09/02", "pass1954"]
+        user_data = ["test.w@gmail.com", "Hello", "Hi", "1954/09/02", "pass1954"]
         dbc.Q_add_product_data(scan_results, user_data[0])
 
         end = time.time()
         process_runtime = end - start
         total_runtime.append(process_runtime)
         print(f"Process Run Time: {process_runtime:.2f}s")
+        # os.system("pause")
 
     print(f"\n  Total Run Time: {sum(total_runtime):.2f}s")
     print(f"Average Run Time: {sum(total_runtime)/len(file_queue):.2f}s")
@@ -100,12 +101,12 @@ if __name__ == "__main__":
 #  "bill3.jpg"            - FAIL        AttributeError: "NoneType" object has no attribute "group"
 
 # successful parsed examples
-file_queue = ["20220421_001520.jpg", "20220405_232412.jpg", "20220425_200954.jpg",
-              "20220420_213104.jpg", "20220428_031510.jpg", "20220421_001513.jpg",
-              "20220418_191924.jpg", "20220420_213119.jpg", "20220504_120636.jpg",
-              "20220508_211331.jpg", "20220420_213112.jpg", "20220405_232352.jpg",
-              "20220504_120549.jpg", "20220525_135810.jpg", "20220405_232339.jpg",
-              "20220525_135836.jpg", "20220405_232446.jpg", "20220406_231142.jpg",
-              "20220425_201027.jpg", "20220428_031503.jpg", "20220504_120558.jpg",
-              "20220504_120610.jpg", "20220504_120619.jpg", "20220525_135758_e.jpg",
-              "20220428_031519_e.jpg", "20220428_031457_e.jpg"]
+# file_queue = ["20220421_001520.jpg", "20220405_232412.jpg", "20220425_200954.jpg",
+#               "20220420_213104.jpg", "20220428_031510.jpg", "20220421_001513.jpg",
+#               "20220418_191924.jpg", "20220420_213119.jpg", "20220504_120636.jpg",
+#               "20220508_211331.jpg", "20220420_213112.jpg", "20220405_232352.jpg",
+#               "20220504_120549.jpg", "20220525_135810.jpg", "20220405_232339.jpg",
+#               "20220525_135836.jpg", "20220405_232446.jpg", "20220406_231142.jpg",
+#               "20220425_201027.jpg", "20220428_031503.jpg", "20220504_120558.jpg",
+#               "20220504_120610.jpg", "20220504_120619.jpg", "20220525_135758_e.jpg",
+#               "20220428_031519_e.jpg", "20220428_031457_e.jpg"]
