@@ -1,0 +1,59 @@
+<!doctype html>
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+
+    <body>
+        <nav class="border-b border-gray-300">
+            <div class="max-w-6xl mx-auto py-2 px-6 xl:px-0 flex items-center justify-between">
+                <div class="menu-left flex items-center space-x-6">
+                    <a href="{% url 'frontpage' %}" class="py-4 text-lg text-purple-500 font-semibold"> Budgeteer </a>
+                    
+                    <ul class="flex items-center space-x-4">
+                        <li><a href="#"> Demo </a></li>
+                        <li><a href="{% url 'contact' %}"> Contact </a></li>
+                        <li><a href="#"> About </a></li>
+                    </ul>
+                </div>
+
+                <div class="menu-right flex items-center space-x-10">                    
+                    <ul class="flex items-center space-x-4">
+                        <li><a href="{% url 'dashboard' %}"> Dashboard </a></li>
+                        <li><a href="#"> Sign in </a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+        
+        <footer class="bg-gray-100">
+            <div class="max-w-6xl mx-auto py-10 px-6 xl:px-0 md:flex justify-between">
+                <div class="footer-left mb-12 md:mb-0">
+                    <h2 class="mb-5 uppercase text-lg"> About us </h2>
+                    <p class="text-gray=700"> Text template goes here.. </p>
+                </div>
+
+                <div>
+                    <div class="footer-right">
+                        <h2 class="mb-0 uppercase text-lg"> Links </h2>
+
+                        <ul class="space-y-0">
+                            <li><a href="#" class="text-purple-500 hover:text-purple-800"</a> Demo </li>
+                            <li><a href="#" class="text-purple-500 hover:text-purple-800"</a> Contact </li>
+                            <li><a href="#" class="text-purple-500 hover:text-purple-800"</a> About </li>
+                            <li><a href="#" class="text-purple-500 hover:text-purple-800"</a> Dash </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </body>
+</html>
